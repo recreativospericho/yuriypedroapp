@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Inicio{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0"><i class="bi bi-speedometer2"></i> Resumen — {{ mes_nombre }} {{ año }}</h5>
+  <span class="badge" style="background:#F59E0B;color:#111;font-size:.85rem">
+    {{ n_facturas }} factura{{ 's' if n_facturas!=1 }}
+  </span>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="text-muted small">Facturado (con IVA)</div>
+      <div class="stat-num text-warning">{{ "%.2f"|format(ingresos) }} €</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3" style="border-color:#3B82F6">
+      <div class="text-muted small">Base imponible</div>
+      <div class="stat-num text-primary">{{ "%.2f"|format(ingresos_base) }} €</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3" style="border-color:#DC2626">
+      <div class="text-muted small">Gastos mes</div>
+      <div class="stat-num text-danger">{{ "%.2f"|format(gastos_tot) }} €</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3" style="border-color:#10B981">
+      <div class="text-muted small">Km recorridos</div>
+      <div class="stat-num text-success">{{ "%.0f"|format(km_total) }} km</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- IVA acumulado -->
+  <div class="col-12 col-md-4">
+    <div class="card p-3 h-100" style="border-left:4px solid #F59E0B">
+      <div class="fw-bold mb-2"><i class="bi bi-percent"></i> IVA acumulado mes</div>
+      <div class="fs-3 fw-bold text-warning">{{ "%.2f"|format(iva_cobrado) }} €</div>
+      <div class="text-muted small mt-1">Reserva este dinero para Hacienda (Modelo 303)</div>
+      <div class="progress mt-2" style="height:6px">
+        <div class="progress-bar bg-warning" style="width:100%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cobradas / Pendientes -->
+  <div class="col-12 col-md-4">
+    <div class="card p-3 h-100">
+      <div class="fw-bold mb-2"><i class="bi bi-cash-coin"></i> Estado cobros</div>
+      <div class="d-flex justify-content-between mb-1">
+        <span class="text-muted small">Cobradas</span>
+        <span class="fw-bold text-success">{{ "%.2f"|format(cobradas) }} €</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span class="text-muted small">Pendientes</span>
+        <span class="fw-bold text-warning">{{ "%.2f"|format(pendientes) }} €</span>
+      </div>
+      {% if ingresos > 0 %}
+      <div class="progress mt-2" style="height:8px">
+        <div class="progress-bar bg-success" style="width:{{ ((cobradas/ingresos)*100)|round|int }}%"></div>
+        <div class="progress-bar bg-warning" style="width:{{ ((pendientes/ingresos)*100)|round|int }}%"></div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Accesos rápidos -->
+  <div class="col-12 col-md-4">
+    <div class="card p-3 h-100">
+      <div class="fw-bold mb-2"><i class="bi bi-lightning-charge"></i> Acceso rápido</div>
+      <div class="d-grid gap-2">
+        <a href="{{ url_for('facturas') }}" class="btn btn-amber btn-sm">
+          <i class="bi bi-plus-lg"></i> Nueva factura
+        </a>
+        <a href="{{ url_for('gastos') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-plus-lg"></i> Nuevo gasto
+        </a>
+        <a href="{{ url_for('km') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="bi bi-truck"></i> Registrar km
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Facturas pendientes -->
+{% if proximas %}
+<div class="card">
+  <div class="card-header bg-dark text-white">
+    <i class="bi bi-hourglass-split text-warning"></i> Facturas pendientes de cobro
+  </div>
+  <div class="table-wrap">
+    <table class="table table-sm align-middle mb-0">
+      <thead class="table-light">
+        <tr><th>Nº</th><th>Tienda</th><th>Fecha</th><th class="text-end">Total IVA</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for f in proximas %}
+        <tr>
+          <td><code>{{ f.numero }}</code></td>
+          <td>{{ f.tienda }}</td>
+          <td>{{ f.fecha.strftime('%d/%m/%Y') }}</td>
+          <td class="text-end fw-bold text-warning">{{ "%.2f"|format(f.total_iva) }} €</td>
+          <td class="text-end">
+            <form method="POST" action="{{ url_for('factura_cobrar', fid=f.id) }}" class="d-inline">
+              <button class="btn btn-sm btn-success">✅ Cobrada</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

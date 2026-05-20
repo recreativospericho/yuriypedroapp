@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Kilómetros{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0"><i class="bi bi-truck"></i> Control de Km</h5>
+  <div>
+    <span class="fw-bold text-success me-2">{{ "%.0f"|format(total_km) }} km totales</span>
+    <button class="btn btn-amber btn-sm" data-bs-toggle="collapse" data-bs-target="#frm-km">
+      <i class="bi bi-plus-lg"></i> Registrar
+    </button>
+  </div>
+</div>
+
+<!-- Formulario -->
+<div class="collapse mb-3" id="frm-km">
+  <div class="card p-3">
+    <form method="POST" action="{{ url_for('km_nuevo') }}">
+      <div class="row g-2">
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Fecha *</label>
+          <input type="date" name="fecha" class="form-control"
+                 value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Tienda *</label>
+          <select name="tienda" class="form-select" required>
+            <option value="Pinatar">Pinatar</option>
+            <option value="Horadada">Horadada</option>
+            <option value="Otros">Otros / Gestiones</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Km inicio</label>
+          <input type="number" name="km_inicio" class="form-control"
+                 min="0" step="0.1" placeholder="0" id="ki" oninput="calcKm()">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Km fin</label>
+          <input type="number" name="km_fin" class="form-control"
+                 min="0" step="0.1" placeholder="0" id="kf" oninput="calcKm()">
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label small fw-semibold">Notas</label>
+          <input type="text" name="notas" class="form-control" placeholder="Ruta, incidencias...">
+        </div>
+        <div class="col-12">
+          <div class="text-warning small mb-2" id="prev-km"></div>
+          <button type="submit" class="btn btn-amber w-100">Guardar viaje</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Historial -->
+<div class="card">
+  <div class="table-wrap">
+    <table class="table table-hover align-middle mb-0 small">
+      <thead class="table-dark">
+        <tr><th>Fecha</th><th>Tienda</th><th class="text-end">Km inicio</th>
+            <th class="text-end">Km fin</th><th class="text-end">Km viaje</th>
+            <th>Notas</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for v in viajes %}
+        <tr>
+          <td>{{ v.fecha.strftime('%d/%m/%Y') }}</td>
+          <td>
+            <span class="badge {% if v.tienda=='Pinatar' %}bg-warning text-dark
+                               {% elif v.tienda=='Horadada' %}bg-info text-dark
+                               {% else %}bg-secondary{% endif %}">
+              {{ v.tienda }}
+            </span>
+          </td>
+          <td class="text-end text-muted">{{ "%.0f"|format(v.km_inicio) }}</td>
+          <td class="text-end text-muted">{{ "%.0f"|format(v.km_fin) }}</td>
+          <td class="text-end fw-bold text-success">{{ "%.0f"|format(v.km_total) }} km</td>
+          <td class="text-muted">{{ v.notas or '—' }}</td>
+          <td>
+            <form method="POST" action="{{ url_for('km_eliminar', kid=v.id) }}"
+                  class="d-inline" onsubmit="return confirm('¿Eliminar?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Sin viajes registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function calcKm() {
+  const ki = parseFloat(document.getElementById('ki').value) || 0;
+  const kf = parseFloat(document.getElementById('kf').value) || 0;
+  const km = Math.max(kf - ki, 0);
+  document.getElementById('prev-km').textContent = km > 0 ? `Km del viaje: ${km.toFixed(1)} km` : '';
+}
+</script>
+{% endblock %}

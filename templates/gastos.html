@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Gastos{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0"><i class="bi bi-wallet2"></i> Gastos</h5>
+  <div>
+    <span class="fw-bold text-danger me-2">{{ "%.2f"|format(total) }} €</span>
+    <button class="btn btn-amber btn-sm" data-bs-toggle="collapse" data-bs-target="#frm-gasto">
+      <i class="bi bi-plus-lg"></i> Nuevo
+    </button>
+  </div>
+</div>
+
+<!-- Formulario -->
+<div class="collapse mb-3" id="frm-gasto">
+  <div class="card p-3">
+    <form method="POST" action="{{ url_for('gasto_nuevo') }}" enctype="multipart/form-data">
+      <div class="row g-2">
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Fecha *</label>
+          <input type="date" name="fecha" class="form-control"
+                 value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Categoría *</label>
+          <select name="categoria" class="form-select" required>
+            {% for c in categorias %}
+            <option value="{{ c }}">{{ c|capitalize }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Importe *</label>
+          <div class="input-group">
+            <input type="number" name="importe" class="form-control"
+                   min="0" step="0.01" placeholder="0.00" required>
+            <span class="input-group-text">€</span>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Tienda</label>
+          <select name="tienda" class="form-select">
+            <option value="">— General —</option>
+            <option value="Pinatar">Pinatar</option>
+            <option value="Horadada">Horadada</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-2">
+          <label class="form-label small fw-semibold">Descripción</label>
+          <input type="text" name="descripcion" class="form-control" placeholder="Notas...">
+        </div>
+        <div class="col-12 col-md-2">
+          <label class="form-label small fw-semibold">Foto ticket</label>
+          <input type="file" name="foto" class="form-control" accept="image/*" capture="environment">
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-amber w-100">Registrar gasto</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  <a href="{{ url_for('gastos') }}" class="btn btn-sm {% if not tienda and not cat %}btn-dark{% else %}btn-outline-dark{% endif %}">Todos</a>
+  <a href="{{ url_for('gastos', tienda='Pinatar') }}"
+     class="btn btn-sm {% if tienda=='Pinatar' %}btn-warning{% else %}btn-outline-warning{% endif %}">Pinatar</a>
+  <a href="{{ url_for('gastos', tienda='Horadada') }}"
+     class="btn btn-sm {% if tienda=='Horadada' %}btn-info{% else %}btn-outline-info{% endif %}">Horadada</a>
+  {% for c in categorias %}
+  <a href="{{ url_for('gastos', cat=c) }}"
+     class="btn btn-sm {% if cat==c %}btn-secondary{% else %}btn-outline-secondary{% endif %}">{{ c|capitalize }}</a>
+  {% endfor %}
+</div>
+
+<!-- Lista -->
+<div class="card">
+  <div class="table-wrap">
+    <table class="table table-hover align-middle mb-0 small">
+      <thead class="table-dark">
+        <tr><th>Fecha</th><th>Categoría</th><th>Descripción</th><th>Tienda</th>
+            <th class="text-end">Importe</th><th>Ticket</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for g in gastos %}
+        <tr>
+          <td>{{ g.fecha.strftime('%d/%m/%Y') }}</td>
+          <td><span class="badge bg-secondary">{{ g.categoria }}</span></td>
+          <td>{{ g.descripcion or '—' }}</td>
+          <td>
+            {% if g.tienda %}
+            <span class="badge {% if g.tienda=='Pinatar' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+              {{ g.tienda }}
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="text-end fw-bold text-danger">{{ "%.2f"|format(g.importe) }} €</td>
+          <td>
+            {% if g.foto_b64 %}
+            <img src="{{ g.foto_b64 }}" style="width:36px;height:36px;object-fit:cover;border-radius:6px;cursor:pointer"
+                 onclick="this.style.width=this.style.width=='36px'?'200px':'36px'">
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <form method="POST" action="{{ url_for('gasto_eliminar', gid=g.id) }}"
+                  class="d-inline" onsubmit="return confirm('¿Eliminar?')">
+              <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center text-muted py-4">Sin gastos registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+      {% if gastos %}
+      <tfoot class="table-dark">
+        <tr>
+          <td colspan="4" class="fw-bold">TOTAL</td>
+          <td class="text-end fw-bold text-danger">{{ "%.2f"|format(total) }} €</td>
+          <td colspan="2"></td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+{% endblock %}

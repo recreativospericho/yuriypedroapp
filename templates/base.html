@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>{% block title %}Retail Service{% endblock %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --amber:#F59E0B; --dark:#111827; --dark2:#1F2937; }
+    body  { background:#F3F4F6; font-size:15px; }
+    .navbar { background:var(--dark) !important; }
+    .navbar-brand { font-weight:900; color:var(--amber) !important; font-size:1.15rem; letter-spacing:1px; }
+    .nav-link { color:#ccc !important; font-size:.9rem; }
+    .nav-link.active, .nav-link:hover { color:#fff !important; }
+    .card  { border:none; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,.08); }
+    .card-header { border-radius:12px 12px 0 0 !important; font-weight:600; }
+    .stat-card { border-left:4px solid var(--amber); border-radius:10px; }
+    .stat-num  { font-size:1.6rem; font-weight:700; }
+    .badge-pin  { background:var(--amber); color:#111; }
+    .btn-amber  { background:var(--amber); border-color:var(--amber); color:#111; font-weight:600; }
+    .btn-amber:hover { background:#D97706; border-color:#D97706; color:#111; }
+    .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    /* Marca de agua logo */
+    #watermark { position:fixed;top:0;left:0;width:100%;height:100%;
+                 background:url('/logo-png') center/25% no-repeat;
+                 opacity:0.04;pointer-events:none;z-index:0; }
+    .fab { position:fixed;bottom:24px;right:20px;z-index:999;
+           width:54px;height:54px;border-radius:50%;
+           display:flex;align-items:center;justify-content:center;
+           font-size:1.5rem;box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<div id="watermark"></div>
+
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+  <div class="container-fluid px-3">
+    <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+      <span style="color:var(--amber)">Retail</span><span style="color:#fff">Service</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+            data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}"
+            href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Inicio</a></li>
+        <li class="nav-item"><a class="nav-link {% if 'factura' in (request.endpoint or '') %}active{% endif %}"
+            href="{{ url_for('facturas') }}"><i class="bi bi-file-earmark-text"></i> Facturas</a></li>
+        <li class="nav-item"><a class="nav-link {% if 'gasto' in (request.endpoint or '') %}active{% endif %}"
+            href="{{ url_for('gastos') }}"><i class="bi bi-wallet2"></i> Gastos</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='km' %}active{% endif %}"
+            href="{{ url_for('km') }}"><i class="bi bi-truck"></i> Km</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='agenda' %}active{% endif %}"
+            href="{{ url_for('agenda') }}"><i class="bi bi-calendar3"></i> Agenda</a></li>
+        {% if session.get('user_rol') in ('admin','socio') %}
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='ajustes' %}active{% endif %}"
+            href="{{ url_for('ajustes') }}"><i class="bi bi-gear"></i> Ajustes</a></li>
+        {% endif %}
+      </ul>
+      {% set u = usuario_actual() %}
+      {% if u %}
+      <span class="badge rounded-pill me-2"
+            style="background:{{ u.color }};color:#111;font-size:.85rem;padding:6px 12px">
+        {{ u.iniciales }} · {{ u.nombre }}
+      </span>
+      {% endif %}
+      <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-box-arrow-right"></i> Salir
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="container-fluid px-3 py-3" style="position:relative;z-index:1">
+  {% for cat, msg in get_flashed_messages(with_categories=True) %}
+    <div class="alert alert-{{ cat }} alert-dismissible fade show" role="alert">
+      {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

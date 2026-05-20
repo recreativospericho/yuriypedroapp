@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}Agenda{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0"><i class="bi bi-calendar3"></i> Agenda semanal</h5>
+  <button class="btn btn-amber btn-sm" data-bs-toggle="collapse" data-bs-target="#frm-parte">
+    <i class="bi bi-plus-lg"></i> Parte de trabajo
+  </button>
+</div>
+
+<!-- Formulario nuevo parte -->
+<div class="collapse mb-3" id="frm-parte">
+  <div class="card p-3">
+    <h6 class="fw-bold mb-3">Nuevo parte de trabajo</h6>
+    <form method="POST" action="{{ url_for('parte_nuevo') }}">
+      <div class="row g-2">
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Fecha *</label>
+          <input type="date" name="fecha" class="form-control"
+                 value="{{ hoy.strftime('%Y-%m-%d') }}" required>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Tienda *</label>
+          <select name="tienda" class="form-select" required>
+            <option value="Pinatar">Pinatar</option>
+            <option value="Horadada">Horadada</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Hora entrada</label>
+          <input type="time" name="hora_entrada" class="form-control">
+        </div>
+        <div class="col-6 col-md-2">
+          <label class="form-label small fw-semibold">Hora salida</label>
+          <input type="time" name="hora_salida" class="form-control">
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label small fw-semibold">Tareas realizadas</label>
+          <input type="text" name="tareas" class="form-control"
+                 placeholder="Reposición, merchandising, limpieza...">
+        </div>
+        <div class="col-12">
+          <label class="form-label small fw-semibold">Incidencias</label>
+          <input type="text" name="incidencias" class="form-control"
+                 placeholder="Ninguna / descripción si las hay">
+        </div>
+        <div class="col-12">
+          <button type="submit" class="btn btn-amber w-100">Guardar parte</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Semana -->
+<div class="row g-2 mb-3">
+  {% set dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] %}
+  {% for i, dia in enumerate(semana) %}
+  {% set es_hoy = (dia == hoy) %}
+  {% set parte_pin = partes_dict.get((dia, 'Pinatar')) %}
+  {% set parte_hor = partes_dict.get((dia, 'Horadada')) %}
+  <div class="col">
+    <div class="card p-2 text-center {% if es_hoy %}border-warning{% endif %}"
+         style="min-width:80px">
+      <div class="fw-bold small {% if es_hoy %}text-warning{% endif %}">
+        {{ dias[i] }}
+      </div>
+      <div class="text-muted" style="font-size:.75rem">{{ dia.strftime('%d/%m') }}</div>
+      <!-- Pinatar (ámbar) -->
+      {% if i < 5 and i in [0,2,4] %}
+      <div class="mt-1">
+        <span class="badge {% if parte_pin %}bg-warning text-dark{% else %}bg-light text-muted border{% endif %}"
+              style="font-size:.65rem">📦 Pin</span>
+      </div>
+      {% endif %}
+      <!-- Horadada (azul) -->
+      {% if i < 5 and i in [1,3] %}
+      <div class="mt-1">
+        <span class="badge {% if parte_hor %}bg-info text-dark{% else %}bg-light text-muted border{% endif %}"
+              style="font-size:.65rem">📦 Hor</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Partes de la semana -->
+{% set todos_partes = partes_dict.values()|list %}
+{% if todos_partes %}
+<div class="card">
+  <div class="card-header bg-dark text-white fw-bold">
+    <i class="bi bi-clipboard-check"></i> Partes de esta semana
+  </div>
+  <div class="table-wrap">
+    <table class="table table-sm align-middle mb-0 small">
+      <thead class="table-light">
+        <tr><th>Fecha</th><th>Tienda</th><th>Entrada</th><th>Salida</th>
+            <th>Tareas</th><th>Incidencias</th></tr>
+      </thead>
+      <tbody>
+        {% for p in todos_partes|sort(attribute='fecha') %}
+        <tr>
+          <td>{{ p.fecha.strftime('%d/%m/%Y') }}</td>
+          <td><span class="badge {% if p.tienda=='Pinatar' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
+            {{ p.tienda }}</span></td>
+          <td>{{ p.hora_entrada or '—' }}</td>
+          <td>{{ p.hora_salida or '—' }}</td>
+          <td>{{ p.tareas or '—' }}</td>
+          <td class="text-muted">{{ p.incidencias or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center text-muted py-4">
+  <i class="bi bi-calendar-x" style="font-size:2rem"></i>
+  <p class="mt-2">Sin partes esta semana. Añade el primero.</p>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script>
+// Jinja enumerate helper no existe, usar loop.index
+</script>
+{% endblock %}

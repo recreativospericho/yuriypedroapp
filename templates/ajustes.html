@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Ajustes{% endblock %}
+{% block content %}
+
+<h5 class="fw-bold mb-4"><i class="bi bi-gear"></i> Ajustes</h5>
+
+<div class="row g-3">
+
+  <!-- Datos empresa -->
+  <div class="col-12 col-md-6">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-building"></i> Datos de la empresa</h6>
+      <form method="POST">
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Nombre empresa</label>
+          <input type="text" name="EMPRESA_NOMBRE" class="form-control"
+                 value="{{ get_config('EMPRESA_NOMBRE','Retail Service') }}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">NIF / CIF</label>
+          <input type="text" name="EMPRESA_NIF" class="form-control"
+                 value="{{ get_config('EMPRESA_NIF','20517937M') }}">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Dirección</label>
+          <input type="text" name="EMPRESA_DIR" class="form-control"
+                 value="{{ get_config('EMPRESA_DIR') }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Teléfono</label>
+          <input type="text" name="EMPRESA_TEL" class="form-control"
+                 value="{{ get_config('EMPRESA_TEL') }}">
+        </div>
+        <button type="submit" class="btn btn-amber w-100">Guardar datos</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Usuarios y PINs -->
+  <div class="col-12 col-md-6">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-people"></i> Usuarios y PINs</h6>
+      {% for u in usuarios %}
+      <div class="card mb-2 p-2" style="border-left:3px solid {{ u.color }}">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <div>
+            <span class="badge rounded-pill me-1"
+                  style="background:{{ u.color }};color:#111">{{ u.iniciales }}</span>
+            <strong>{{ u.nombre }}</strong>
+            <span class="text-muted small ms-1">({{ u.rol }})</span>
+          </div>
+        </div>
+        <form method="POST" action="{{ url_for('cambiar_pin') }}" class="row g-1">
+          <input type="hidden" name="user_id" value="{{ u.id }}">
+          <div class="col-4">
+            <input type="password" name="pin_actual" class="form-control form-control-sm"
+                   placeholder="PIN actual" maxlength="4" inputmode="numeric">
+          </div>
+          <div class="col-4">
+            <input type="password" name="pin_nuevo" class="form-control form-control-sm"
+                   placeholder="PIN nuevo" maxlength="4" inputmode="numeric">
+          </div>
+          <div class="col-4">
+            <button class="btn btn-sm btn-outline-warning w-100">Cambiar</button>
+          </div>
+        </form>
+      </div>
+      {% endfor %}
+      <div class="alert alert-warning py-2 mt-2 small mb-0">
+        <i class="bi bi-shield-lock"></i>
+        Cambia los PINs por defecto (1234, 5678) antes de usar en producción.
+      </div>
+    </div>
+  </div>
+
+  <!-- Tiendas info -->
+  <div class="col-12">
+    <div class="card p-3">
+      <h6 class="fw-bold mb-3"><i class="bi bi-shop"></i> Tiendas configuradas</h6>
+      <div class="row g-2">
+        <div class="col-6 col-md-4">
+          <div class="card p-2 text-center" style="border-left:4px solid #F59E0B">
+            <div class="fw-bold text-warning">📦 JYSK Pinatar</div>
+            <div class="text-muted small">San Pedro del Pinatar</div>
+            <div class="badge bg-warning text-dark mt-1">Lunes · Miércoles · Viernes</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-4">
+          <div class="card p-2 text-center" style="border-left:4px solid #3B82F6">
+            <div class="fw-bold text-info">📦 JYSK Horadada</div>
+            <div class="text-muted small">Pilar de la Horadada</div>
+            <div class="badge bg-info text-dark mt-1">Martes · Jueves</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
