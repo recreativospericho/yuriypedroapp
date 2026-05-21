@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Editar parte{% endblock %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0"><i class="bi bi-pencil"></i> Editar parte — {{ p.fecha.strftime('%d/%m/%Y') }}</h5>
+  <a href="{{ url_for('agenda') }}" class="btn btn-outline-secondary btn-sm">← Volver</a>
+</div>
+
+<div class="card p-3">
+  <form method="POST">
+    <div class="row g-2 mb-3">
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold">Fecha *</label>
+        <input type="date" name="fecha" class="form-control"
+               value="{{ p.fecha.strftime('%Y-%m-%d') }}" required>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold">Tienda *</label>
+        <select name="tienda" class="form-select" required>
+          {% for t in ['Pinatar','Horadada','Ambas','Otros'] %}
+          <option value="{{ t }}" {% if p.tienda==t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold">Hora entrada</label>
+        <input type="time" name="hora_entrada" class="form-control" value="{{ p.hora_entrada or '' }}">
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold">Hora salida</label>
+        <input type="time" name="hora_salida" class="form-control" value="{{ p.hora_salida or '' }}">
+      </div>
+      <div class="col-12 col-md-4">
+        <label class="form-label small fw-semibold">¿Quién iba en la furgoneta?</label>
+        <div class="d-flex gap-3 flex-wrap">
+          {% set personas_lista = (p.personas or '').split(',') %}
+          {% for u in usuarios %}
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="personas"
+                   value="{{ u.nombre }}" id="per_{{ u.id }}"
+                   {% if u.nombre in personas_lista %}checked{% endif %}>
+            <label class="form-check-label" for="per_{{ u.id }}">
+              <span class="badge rounded-pill" style="background:{{ u.color }};color:#111">
+                {{ u.iniciales }}
+              </span> {{ u.nombre }}
+            </label>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 mb-3" style="border-left:3px solid #F59E0B">
+      <div class="fw-bold mb-2"><i class="bi bi-truck"></i> Portes y montajes</div>
+      <div class="row g-2">
+        <div class="col-12 col-md-6">
+          <label class="form-label small fw-semibold">Importes (ej: 30+40+50+300)</label>
+          <input type="text" name="portes_texto" id="inp-portes" class="form-control"
+                 value="{{ p.portes_texto or '' }}" oninput="calcPortes()">
+          <div class="form-text text-warning" id="prev-portes">
+            {% if p.total_portes %}
+            Total IVA inc.: {{ "%.2f"|format(p.total_portes) }} € → Base: {{ "%.2f"|format(p.total_portes_base) }} €
+            {% endif %}
+          </div>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label small fw-semibold">Tareas realizadas</label>
+          <input type="text" name="tareas" class="form-control" value="{{ p.tareas or '' }}">
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-3 mb-3" style="border-left:3px solid #DC2626">
+      <div class="fw-bold mb-2"><i class="bi bi-wallet2"></i> Gastos del día</div>
+      <div class="row g-2">
+        <div class="col-6 col-md-3">
+          <label class="form-label small fw-semibold">Gasoil (€)</label>
+          <input type="number" name="gasto_gasoil" id="g-gasoil" class="form-control"
+                 min="0" step="0.01" value="{{ p.gasto_gasoil or 0 }}" oninput="calcGastos()">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small fw-semibold">Furgoneta/día (€)</label>
+          <input type="number" name="gasto_furgoneta" id="g-furgoneta" class="form-control"
+                 min="0" step="0.01" value="{{ p.gasto_furgoneta or 0 }}" oninput="calcGastos()">
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label small fw-semibold">Empleado/día (€)</label>
+          <input type="number" name="gasto_empleado" id="g-empleado" class="form-control"
+                 min="0" step="0.01" value="{{ p.gasto_empleado or 60 }}" oninput="calcGastos()">
+        </div>
+        <div class="col-6 col-md-3 d-flex align-items-end">
+          <div class="card p-2 w-100 text-center" style="background:#0F172A">
+            <div class="text-muted small">Resultado</div>
+            <div class="fw-bold fs-5" id="resultado-dia" style="color:#F59E0B">
+              {{ "%.2f"|format(p.resultado_dia) }} €
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label small fw-semibold">Incidencias</label>
+      <input type="text" name="incidencias" class="form-control" value="{{ p.incidencias or '' }}">
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-amber flex-grow-1 fw-bold">
+        <i class="bi bi-save"></i> Guardar cambios
+      </button>
+      <a href="{{ url_for('agenda') }}" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+function calcPortes() {
+  const txt = document.getElementById('inp-portes').value;
+  const nums = txt.match(/\d+(?:[.,]\d+)?/g) || [];
+  const total = nums.reduce((s,n) => s + parseFloat(n.replace(',','.')), 0);
+  document.getElementById('prev-portes').textContent = total > 0
+    ? `Total IVA inc.: ${total.toFixed(2).replace('.',',')} €  →  Base: ${(total/1.21).toFixed(2).replace('.',',')} €` : '';
+  calcGastos();
+}
+function calcGastos() {
+  const txt = document.getElementById('inp-portes').value;
+  const nums = txt.match(/\d+(?:[.,]\d+)?/g) || [];
+  const base  = nums.reduce((s,n) => s + parseFloat(n.replace(',','.')), 0) / 1.21;
+  const g = parseFloat(document.getElementById('g-gasoil').value)||0;
+  const f = parseFloat(document.getElementById('g-furgoneta').value)||0;
+  const e = parseFloat(document.getElementById('g-empleado').value)||0;
+  const res = base - g - f - e;
+  const div = document.getElementById('resultado-dia');
+  div.textContent = `${res >= 0 ? '+' : ''}${res.toFixed(2).replace('.',',')} €`;
+  div.style.color = res >= 0 ? '#10B981' : '#EF4444';
+}
+</script>
+{% endblock %}

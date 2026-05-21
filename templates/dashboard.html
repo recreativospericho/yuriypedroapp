@@ -9,6 +9,21 @@
   </span>
 </div>
 
+<!-- Alerta pendiente de cobro -->
+{% if total_pendiente_cobro > 0 %}
+<div class="card mb-3 p-3 d-flex flex-row justify-content-between align-items-center"
+     style="border-left:4px solid #F59E0B;background:#1F2937">
+  <div>
+    <div class="text-muted small">💰 Pendiente de cobrar de JYSK</div>
+    <div class="fw-bold fs-3 text-warning">{{ "%.2f"|format(total_pendiente_cobro) }} €</div>
+    <div class="text-muted small">{{ proximas|length }} factura{{ 's' if proximas|length!=1 }} sin cobrar</div>
+  </div>
+  <a href="{{ url_for('facturas', estado='pendiente') }}" class="btn btn-amber btn-sm">
+    Ver facturas →
+  </a>
+</div>
+{% endif %}
+
 <!-- Stats -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">

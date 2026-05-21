@@ -148,12 +148,15 @@ def dashboard():
     km_mes        = KmViaje.query.filter(KmViaje.fecha >= f_ini, KmViaje.fecha <= f_fin).all()
     km_total      = sum(k.km_total for k in km_mes)
 
-    proximas      = (Factura.query.filter_by(estado="pendiente")
-                    .order_by(Factura.fecha).limit(5).all())
+    # Todas las facturas no cobradas (pendientes + enviadas)
+    proximas      = (Factura.query.filter(Factura.estado != "cobrada")
+                    .order_by(Factura.fecha).all())
+    total_pendiente_cobro = sum(f.total_iva for f in proximas)
 
     meses_nombres = ["Ene","Feb","Mar","Abr","May","Jun",
                      "Jul","Ago","Sep","Oct","Nov","Dic"]
     return render_template("dashboard.html",
+        total_pendiente_cobro=total_pendiente_cobro,
         hoy=hoy, mes_nombre=meses_nombres[mes-1], año=año,
         ingresos=ingresos, ingresos_base=ingresos_base,
         iva_cobrado=iva_cobrado, gastos_tot=gastos_tot,
@@ -209,6 +212,18 @@ def factura_cobrar(fid):
     f.estado = "cobrada"
     db.session.commit()
     flash(f"Factura {f.numero} marcada como cobrada.", "success")
+    return redirect(url_for("facturas"))
+
+
+@app.route("/facturas/<int:fid>/enviar", methods=["POST"])
+@login_required
+@solo_socios
+def factura_enviar(fid):
+    f = Factura.query.get_or_404(fid)
+    f.estado      = "enviada"
+    f.fecha_envio = date.today()
+    db.session.commit()
+    flash(f"Factura {f.numero} marcada como enviada a JYSK ({date.today().strftime('%d/%m/%Y')}).", "success")
     return redirect(url_for("facturas"))
 
 
@@ -339,6 +354,43 @@ def agenda():
                            partes_semana=partes_semana, usuarios=usuarios)
 
 
+@app.route("/parte/<int:pid>/eliminar", methods=["POST"])
+@login_required
+def parte_eliminar(pid):
+    p = ParteTrabajo.query.get_or_404(pid)
+    db.session.delete(p)
+    db.session.commit()
+    flash("Parte eliminado.", "info")
+    return redirect(url_for("agenda"))
+
+
+@app.route("/parte/<int:pid>/editar", methods=["GET", "POST"])
+@login_required
+def parte_editar(pid):
+    p       = ParteTrabajo.query.get_or_404(pid)
+    usuarios = Usuario.query.order_by(Usuario.id).all()
+    if request.method == "POST":
+        import re
+        portes_texto = request.form.get("portes_texto", "").strip()
+        nums = re.findall(r'[\d]+(?:[.,]\d+)?', portes_texto.replace(",", "."))
+        p.fecha           = date.fromisoformat(request.form["fecha"])
+        p.tienda          = request.form["tienda"]
+        p.personas        = ",".join(request.form.getlist("personas"))
+        p.hora_entrada    = request.form.get("hora_entrada", "")
+        p.hora_salida     = request.form.get("hora_salida", "")
+        p.portes_texto    = portes_texto
+        p.total_portes    = sum(float(n) for n in nums)
+        p.gasto_gasoil    = float(request.form.get("gasto_gasoil", 0) or 0)
+        p.gasto_furgoneta = float(request.form.get("gasto_furgoneta", 0) or 0)
+        p.gasto_empleado  = float(request.form.get("gasto_empleado", 60) or 60)
+        p.tareas          = request.form.get("tareas", "")
+        p.incidencias     = request.form.get("incidencias", "")
+        db.session.commit()
+        flash("Parte actualizado.", "success")
+        return redirect(url_for("agenda"))
+    return render_template("parte_editar.html", p=p, usuarios=usuarios)
+
+
 @app.route("/parte/nuevo", methods=["POST"])
 @login_required
 def parte_nuevo():
@@ -423,6 +475,8 @@ with app.app_context():
             _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS gasto_gasoil FLOAT DEFAULT 0"))
             _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS gasto_furgoneta FLOAT DEFAULT 0"))
             _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS gasto_empleado FLOAT DEFAULT 60"))
+            _c.execute(_t("ALTER TABLE facturas ADD COLUMN IF NOT EXISTS fecha_envio DATE"))
+            _c.execute(_t("ALTER TABLE facturas ALTER COLUMN estado SET DEFAULT 'pendiente'"))
             _c.commit()
     except Exception as _e:
         print(f"Migration: {_e}")

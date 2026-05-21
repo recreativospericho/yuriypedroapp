@@ -94,6 +94,14 @@
           <td class="text-center">
             {% if f.estado == 'cobrada' %}
               <span class="badge bg-success">✅ Cobrada</span>
+            {% elif f.estado == 'enviada' %}
+              <span class="badge bg-info text-dark">📨 Enviada</span>
+              {% if f.fecha_envio %}
+              <div style="font-size:.7rem" class="text-muted">
+                {{ f.fecha_envio.strftime('%d/%m') }}
+                · {{ (hoy - f.fecha_envio).days }}d
+              </div>
+              {% endif %}
             {% else %}
               <span class="badge bg-warning text-dark">⏳ Pendiente</span>
             {% endif %}
@@ -104,8 +112,15 @@
               <i class="bi bi-filetype-pdf"></i>
             </a>
             {% if f.estado == 'pendiente' %}
+            <form method="POST" action="{{ url_for('factura_enviar', fid=f.id) }}" class="d-inline">
+              <button class="btn btn-sm btn-info me-1" title="Marcar como enviada a JYSK">
+                <i class="bi bi-send"></i>
+              </button>
+            </form>
+            {% endif %}
+            {% if f.estado != 'cobrada' %}
             <form method="POST" action="{{ url_for('factura_cobrar', fid=f.id) }}" class="d-inline">
-              <button class="btn btn-sm btn-success me-1">✅</button>
+              <button class="btn btn-sm btn-success me-1" title="Cobrada">✅</button>
             </form>
             {% endif %}
             <form method="POST" action="{{ url_for('factura_eliminar', fid=f.id) }}"

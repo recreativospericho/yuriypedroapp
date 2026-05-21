@@ -190,6 +190,16 @@
         <div class="small text-warning">⚠️ {{ p.incidencias }}</div>
         {% endif %}
       </div>
+      <!-- Botones editar/borrar -->
+      <div class="d-flex gap-1 mt-1">
+        <a href="{{ url_for('parte_editar', pid=p.id) }}" class="btn btn-sm btn-outline-warning">
+          <i class="bi bi-pencil"></i>
+        </a>
+        <form method="POST" action="{{ url_for('parte_eliminar', pid=p.id) }}"
+              onsubmit="return confirm('¿Eliminar este parte?')">
+          <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+        </form>
+      </div>
       <!-- Resumen económico del parte -->
       {% if p.total_portes %}
       <div class="text-end small">
