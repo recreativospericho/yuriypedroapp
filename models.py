@@ -66,15 +66,36 @@ class KmViaje(db.Model):
 
 class ParteTrabajo(db.Model):
     __tablename__ = "partes_trabajo"
-    id           = db.Column(db.Integer, primary_key=True)
-    fecha        = db.Column(db.Date, nullable=False, default=date.today)
-    tienda       = db.Column(db.String(40), nullable=False)
-    hora_entrada = db.Column(db.String(10))
-    hora_salida  = db.Column(db.String(10))
-    tareas       = db.Column(db.Text)
-    incidencias  = db.Column(db.Text)
-    user_id      = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
-    usuario      = db.relationship("Usuario", foreign_keys=[user_id])
+    id              = db.Column(db.Integer, primary_key=True)
+    fecha           = db.Column(db.Date, nullable=False, default=date.today)
+    tienda          = db.Column(db.String(40), nullable=False)
+    personas        = db.Column(db.String(100))   # "Pedro,Yuri" / "Pedro,Empleado" etc.
+    hora_entrada    = db.Column(db.String(10))
+    hora_salida     = db.Column(db.String(10))
+    # Portes y montajes del día (expresión + total IVA incluido)
+    portes_texto    = db.Column(db.String(300))   # "30+40+50+300"
+    total_portes    = db.Column(db.Float, default=0.0)   # suma IVA incluido
+    # Desglose de gastos del día
+    gasto_gasoil    = db.Column(db.Float, default=0.0)
+    gasto_furgoneta = db.Column(db.Float, default=0.0)
+    gasto_empleado  = db.Column(db.Float, default=60.0)
+    # Otros
+    tareas          = db.Column(db.Text)
+    incidencias     = db.Column(db.Text)
+    user_id         = db.Column(db.Integer, db.ForeignKey("usuarios.id"))
+    usuario         = db.relationship("Usuario", foreign_keys=[user_id])
+
+    @property
+    def total_gastos(self):
+        return (self.gasto_gasoil or 0) + (self.gasto_furgoneta or 0) + (self.gasto_empleado or 0)
+
+    @property
+    def total_portes_base(self):
+        return round((self.total_portes or 0) / 1.21, 2)
+
+    @property
+    def resultado_dia(self):
+        return round(self.total_portes_base - self.total_gastos, 2)
 
 
 class Config(db.Model):

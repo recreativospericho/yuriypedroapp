@@ -5,16 +5,16 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h5 class="fw-bold mb-0"><i class="bi bi-calendar3"></i> Agenda semanal</h5>
   <button class="btn btn-amber btn-sm" data-bs-toggle="collapse" data-bs-target="#frm-parte">
-    <i class="bi bi-plus-lg"></i> Parte de trabajo
+    <i class="bi bi-plus-lg"></i> Nuevo parte
   </button>
 </div>
 
 <!-- Formulario nuevo parte -->
 <div class="collapse mb-3" id="frm-parte">
   <div class="card p-3">
-    <h6 class="fw-bold mb-3">Nuevo parte de trabajo</h6>
+    <h6 class="fw-bold mb-3">Parte de trabajo diario</h6>
     <form method="POST" action="{{ url_for('parte_nuevo') }}">
-      <div class="row g-2">
+      <div class="row g-2 mb-3">
         <div class="col-6 col-md-2">
           <label class="form-label small fw-semibold">Fecha *</label>
           <input type="date" name="fecha" class="form-control"
@@ -23,8 +23,10 @@
         <div class="col-6 col-md-2">
           <label class="form-label small fw-semibold">Tienda *</label>
           <select name="tienda" class="form-select" required>
-            <option value="Pinatar">Pinatar</option>
-            <option value="Horadada">Horadada</option>
+            <option value="Pinatar">📦 Pinatar</option>
+            <option value="Horadada">📦 Horadada</option>
+            <option value="Ambas">📦 Ambas tiendas</option>
+            <option value="Otros">🔧 Otros / Gestiones</option>
           </select>
         </div>
         <div class="col-6 col-md-2">
@@ -36,50 +38,117 @@
           <input type="time" name="hora_salida" class="form-control">
         </div>
         <div class="col-12 col-md-4">
-          <label class="form-label small fw-semibold">Tareas realizadas</label>
-          <input type="text" name="tareas" class="form-control"
-                 placeholder="Reposición, merchandising, limpieza...">
-        </div>
-        <div class="col-12">
-          <label class="form-label small fw-semibold">Incidencias</label>
-          <input type="text" name="incidencias" class="form-control"
-                 placeholder="Ninguna / descripción si las hay">
-        </div>
-        <div class="col-12">
-          <button type="submit" class="btn btn-amber w-100">Guardar parte</button>
+          <label class="form-label small fw-semibold">¿Quién iba en la furgoneta?</label>
+          <div class="d-flex gap-3 flex-wrap">
+            {% for u in usuarios %}
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="personas"
+                     value="{{ u.nombre }}" id="per_{{ u.id }}"
+                     {% if u.id == session.get('user_id') %}checked{% endif %}>
+              <label class="form-check-label" for="per_{{ u.id }}">
+                <span class="badge rounded-pill" style="background:{{ u.color }};color:#111">
+                  {{ u.iniciales }}
+                </span> {{ u.nombre }}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
+
+      <!-- Portes y montajes -->
+      <div class="card p-3 mb-3" style="border-left:3px solid #F59E0B">
+        <div class="fw-bold mb-2"><i class="bi bi-truck"></i> Portes y montajes del día (IVA incluido)</div>
+        <div class="row g-2">
+          <div class="col-12 col-md-6">
+            <label class="form-label small fw-semibold">Importes (ej: 30+40+50+300)</label>
+            <input type="text" name="portes_texto" id="inp-portes" class="form-control"
+                   placeholder="30+40+50+300+70" oninput="calcPortes()">
+            <div class="form-text text-warning" id="prev-portes"></div>
+          </div>
+          <div class="col-12 col-md-6">
+            <label class="form-label small fw-semibold">Tareas realizadas</label>
+            <input type="text" name="tareas" class="form-control"
+                   placeholder="Reposición, montajes, merchandising...">
+          </div>
+        </div>
+      </div>
+
+      <!-- Desglose gastos del día -->
+      <div class="card p-3 mb-3" style="border-left:3px solid #DC2626">
+        <div class="fw-bold mb-2"><i class="bi bi-wallet2"></i> Gastos del día</div>
+        <div class="row g-2">
+          <div class="col-6 col-md-3">
+            <label class="form-label small fw-semibold">Gasoil / Combustible (€)</label>
+            <div class="input-group">
+              <input type="number" name="gasto_gasoil" id="g-gasoil" class="form-control"
+                     min="0" step="0.01" placeholder="0.00" oninput="calcGastos()">
+              <span class="input-group-text">€</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small fw-semibold">Furgoneta / día (€)</label>
+            <div class="input-group">
+              <input type="number" name="gasto_furgoneta" id="g-furgoneta" class="form-control"
+                     min="0" step="0.01" placeholder="0.00" oninput="calcGastos()">
+              <span class="input-group-text">€</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label small fw-semibold">Empleado / día (€)</label>
+            <div class="input-group">
+              <input type="number" name="gasto_empleado" id="g-empleado" class="form-control"
+                     min="0" step="0.01" value="60" oninput="calcGastos()">
+              <span class="input-group-text">€</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-3 d-flex align-items-end">
+            <div class="card p-2 w-100 text-center" style="background:#0F172A">
+              <div class="text-muted small">Resultado del día</div>
+              <div class="fw-bold fs-5" id="resultado-dia" style="color:#F59E0B">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label small fw-semibold">Incidencias</label>
+        <input type="text" name="incidencias" class="form-control"
+               placeholder="Ninguna / descripción si las hay">
+      </div>
+
+      <button type="submit" class="btn btn-amber w-100 fw-bold">
+        <i class="bi bi-save"></i> Guardar parte
+      </button>
     </form>
   </div>
 </div>
 
 <!-- Semana -->
+{% set dias_nombres = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] %}
 <div class="row g-2 mb-3">
-  {% set dias = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'] %}
-  {% for i, dia in enumerate(semana) %}
+  {% for i in range(7) %}
+  {% set dia = semana[i] %}
   {% set es_hoy = (dia == hoy) %}
-  {% set parte_pin = partes_dict.get((dia, 'Pinatar')) %}
-  {% set parte_hor = partes_dict.get((dia, 'Horadada')) %}
   <div class="col">
     <div class="card p-2 text-center {% if es_hoy %}border-warning{% endif %}"
-         style="min-width:80px">
+         style="min-width:72px;{% if i==5 or i==6 %}opacity:0.6{% endif %}">
       <div class="fw-bold small {% if es_hoy %}text-warning{% endif %}">
-        {{ dias[i] }}
+        {{ dias_nombres[i] }}
       </div>
-      <div class="text-muted" style="font-size:.75rem">{{ dia.strftime('%d/%m') }}</div>
-      <!-- Pinatar (ámbar) -->
-      {% if i < 5 and i in [0,2,4] %}
-      <div class="mt-1">
-        <span class="badge {% if parte_pin %}bg-warning text-dark{% else %}bg-light text-muted border{% endif %}"
-              style="font-size:.65rem">📦 Pin</span>
-      </div>
-      {% endif %}
-      <!-- Horadada (azul) -->
-      {% if i < 5 and i in [1,3] %}
-      <div class="mt-1">
-        <span class="badge {% if parte_hor %}bg-info text-dark{% else %}bg-light text-muted border{% endif %}"
-              style="font-size:.65rem">📦 Hor</span>
-      </div>
+      <div class="text-muted" style="font-size:.7rem">{{ dia.strftime('%d/%m') }}</div>
+      {% set partes_dia = partes_semana | selectattr('fecha','eq',dia) | list %}
+      {% if partes_dia %}
+        {% for p in partes_dia %}
+        <div class="mt-1">
+          <span class="badge {% if 'Pinatar' in p.tienda %}bg-warning text-dark
+                             {% elif 'Horadada' in p.tienda %}bg-info text-dark
+                             {% else %}bg-secondary{% endif %}"
+                style="font-size:.62rem">{{ p.tienda[:3] }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="text-muted mt-1" style="font-size:.7rem">libre</div>
       {% endif %}
     </div>
   </div>
@@ -87,44 +156,97 @@
 </div>
 
 <!-- Partes de la semana -->
-{% set todos_partes = partes_dict.values()|list %}
-{% if todos_partes %}
+{% if partes_semana %}
 <div class="card">
   <div class="card-header bg-dark text-white fw-bold">
     <i class="bi bi-clipboard-check"></i> Partes de esta semana
   </div>
-  <div class="table-wrap">
-    <table class="table table-sm align-middle mb-0 small">
-      <thead class="table-light">
-        <tr><th>Fecha</th><th>Tienda</th><th>Entrada</th><th>Salida</th>
-            <th>Tareas</th><th>Incidencias</th></tr>
-      </thead>
-      <tbody>
-        {% for p in todos_partes|sort(attribute='fecha') %}
-        <tr>
-          <td>{{ p.fecha.strftime('%d/%m/%Y') }}</td>
-          <td><span class="badge {% if p.tienda=='Pinatar' %}bg-warning text-dark{% else %}bg-info text-dark{% endif %}">
-            {{ p.tienda }}</span></td>
-          <td>{{ p.hora_entrada or '—' }}</td>
-          <td>{{ p.hora_salida or '—' }}</td>
-          <td>{{ p.tareas or '—' }}</td>
-          <td class="text-muted">{{ p.incidencias or '—' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  {% for p in partes_semana | sort(attribute='fecha') %}
+  <div class="px-3 py-2 border-bottom">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div>
+        <div class="fw-bold">
+          {{ p.fecha.strftime('%A %d/%m') }}
+          <span class="badge {% if 'Pinatar' in p.tienda %}bg-warning text-dark
+                             {% elif 'Horadada' in p.tienda %}bg-info text-dark
+                             {% else %}bg-secondary{% endif %} ms-1">
+            {{ p.tienda }}
+          </span>
+          {% if p.personas %}
+          <span class="badge bg-dark ms-1" style="border:1px solid #374151">
+            👥 {{ p.personas }}
+          </span>
+          {% endif %}
+        </div>
+        {% if p.hora_entrada or p.hora_salida %}
+        <div class="small text-muted">
+          🕐 {{ p.hora_entrada or '—' }} → {{ p.hora_salida or '—' }}
+        </div>
+        {% endif %}
+        {% if p.tareas %}
+        <div class="small text-muted">📋 {{ p.tareas }}</div>
+        {% endif %}
+        {% if p.incidencias %}
+        <div class="small text-warning">⚠️ {{ p.incidencias }}</div>
+        {% endif %}
+      </div>
+      <!-- Resumen económico del parte -->
+      {% if p.total_portes %}
+      <div class="text-end small">
+        <div class="text-muted">Portes (IVA inc.):</div>
+        <div class="fw-bold text-warning">{{ "%.2f"|format(p.total_portes) }} €</div>
+        {% if p.portes_texto %}
+        <div class="text-muted" style="font-size:.72rem">{{ p.portes_texto }}</div>
+        {% endif %}
+        <div class="text-muted mt-1">Base: {{ "%.2f"|format(p.total_portes_base) }} €</div>
+        <div class="text-danger">Gastos: {{ "%.2f"|format(p.total_gastos) }} €
+          <span style="font-size:.7rem">(G:{{ "%.0f"|format(p.gasto_gasoil or 0) }}€
+           F:{{ "%.0f"|format(p.gasto_furgoneta or 0) }}€
+           E:{{ "%.0f"|format(p.gasto_empleado or 0) }}€)</span>
+        </div>
+        <div class="fw-bold {% if p.resultado_dia >= 0 %}text-success{% else %}text-danger{% endif %}">
+          Resultado: {{ "%.2f"|format(p.resultado_dia) }} €
+        </div>
+      </div>
+      {% endif %}
+    </div>
   </div>
+  {% endfor %}
 </div>
 {% else %}
 <div class="text-center text-muted py-4">
   <i class="bi bi-calendar-x" style="font-size:2rem"></i>
-  <p class="mt-2">Sin partes esta semana. Añade el primero.</p>
+  <p class="mt-2">Sin partes esta semana.</p>
 </div>
 {% endif %}
 
 {% endblock %}
+
 {% block scripts %}
 <script>
-// Jinja enumerate helper no existe, usar loop.index
+function calcPortes() {
+  const txt = document.getElementById('inp-portes').value;
+  const nums = txt.match(/\d+(?:[.,]\d+)?/g) || [];
+  const total = nums.reduce((s,n) => s + parseFloat(n.replace(',','.')), 0);
+  document.getElementById('prev-portes').textContent = total > 0
+    ? `Total IVA inc.: ${total.toFixed(2).replace('.',',')} €  →  Base: ${(total/1.21).toFixed(2).replace('.',',')} €`
+    : '';
+  calcGastos();
+}
+
+function calcGastos() {
+  const portes_txt = document.getElementById('inp-portes').value;
+  const nums = portes_txt.match(/\d+(?:[.,]\d+)?/g) || [];
+  const portes = nums.reduce((s,n) => s + parseFloat(n.replace(',','.')), 0);
+  const base   = portes / 1.21;
+  const gasoil = parseFloat(document.getElementById('g-gasoil').value) || 0;
+  const furg   = parseFloat(document.getElementById('g-furgoneta').value) || 0;
+  const emp    = parseFloat(document.getElementById('g-empleado').value) || 0;
+  const gastos = gasoil + furg + emp;
+  const res    = base - gastos;
+  const div    = document.getElementById('resultado-dia');
+  div.textContent = portes > 0 ? `${res >= 0 ? '+' : ''}${res.toFixed(2).replace('.',',')} €` : '—';
+  div.style.color  = res >= 0 ? '#10B981' : '#EF4444';
+}
 </script>
 {% endblock %}

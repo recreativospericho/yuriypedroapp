@@ -330,30 +330,46 @@ def agenda():
     hoy    = date.today()
     lunes  = hoy - timedelta(days=hoy.weekday())
     semana = [lunes + timedelta(days=i) for i in range(7)]
-    partes = ParteTrabajo.query.filter(
+    partes_semana = ParteTrabajo.query.filter(
         ParteTrabajo.fecha >= lunes,
         ParteTrabajo.fecha <= lunes + timedelta(days=6)
-    ).all()
-    partes_dict = {(p.fecha, p.tienda): p for p in partes}
+    ).order_by(ParteTrabajo.fecha).all()
+    usuarios = Usuario.query.order_by(Usuario.id).all()
     return render_template("agenda.html", hoy=hoy, semana=semana,
-                           partes_dict=partes_dict)
+                           partes_semana=partes_semana, usuarios=usuarios)
 
 
 @app.route("/parte/nuevo", methods=["POST"])
 @login_required
 def parte_nuevo():
+    # Calcular total portes desde la expresión
+    portes_texto = request.form.get("portes_texto", "").strip()
+    total_portes = 0.0
+    if portes_texto:
+        import re
+        nums = re.findall(r'[\d]+(?:[.,]\d+)?', portes_texto.replace(",", "."))
+        total_portes = sum(float(n) for n in nums)
+
+    personas = ",".join(request.form.getlist("personas"))
+
     p = ParteTrabajo(
-        fecha        = date.fromisoformat(request.form["fecha"]),
-        tienda       = request.form["tienda"],
-        hora_entrada = request.form.get("hora_entrada", ""),
-        hora_salida  = request.form.get("hora_salida", ""),
-        tareas       = request.form.get("tareas", ""),
-        incidencias  = request.form.get("incidencias", ""),
-        user_id      = session["user_id"],
+        fecha           = date.fromisoformat(request.form["fecha"]),
+        tienda          = request.form["tienda"],
+        personas        = personas,
+        hora_entrada    = request.form.get("hora_entrada", ""),
+        hora_salida     = request.form.get("hora_salida", ""),
+        portes_texto    = portes_texto,
+        total_portes    = total_portes,
+        gasto_gasoil    = float(request.form.get("gasto_gasoil", 0) or 0),
+        gasto_furgoneta = float(request.form.get("gasto_furgoneta", 0) or 0),
+        gasto_empleado  = float(request.form.get("gasto_empleado", 60) or 60),
+        tareas          = request.form.get("tareas", ""),
+        incidencias     = request.form.get("incidencias", ""),
+        user_id         = session["user_id"],
     )
     db.session.add(p)
     db.session.commit()
-    flash("Parte de trabajo guardado.", "success")
+    flash(f"Parte guardado — Portes: {total_portes:.2f} € (IVA inc.) · Gastos: {p.total_gastos:.2f} €", "success")
     return redirect(url_for("agenda"))
 
 
@@ -398,3 +414,15 @@ def cambiar_pin():
 with app.app_context():
     db.create_all()
     seed_all()
+    from sqlalchemy import text as _t
+    try:
+        with db.engine.connect() as _c:
+            _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS personas VARCHAR(100)"))
+            _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS portes_texto VARCHAR(300)"))
+            _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS total_portes FLOAT DEFAULT 0"))
+            _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS gasto_gasoil FLOAT DEFAULT 0"))
+            _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS gasto_furgoneta FLOAT DEFAULT 0"))
+            _c.execute(_t("ALTER TABLE partes_trabajo ADD COLUMN IF NOT EXISTS gasto_empleado FLOAT DEFAULT 60"))
+            _c.commit()
+    except Exception as _e:
+        print(f"Migration: {_e}")
