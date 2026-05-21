@@ -186,7 +186,8 @@ def facturas():
 
 @app.route("/facturas/nueva", methods=["POST"])
 @login_required
-@solo_sociosdef factura_nueva():
+@solo_socios
+def factura_nueva():
     total_iva = float(request.form.get("total_iva", 0) or 0)
     iva_pct   = float(get_config("IVA_PCT", "21")) / 100
     base      = round(total_iva / (1 + iva_pct), 2)
