@@ -114,9 +114,9 @@ def login():
             session["user_nombre"]= u.nombre
             session["user_rol"]  = u.rol
             session["user_ini"]  = u.iniciales
-            # Empleado va directo a facturas
+            # Empleado va directo a gastos (solo puede ver gastos)
             if u.rol == "empleado":
-                return redirect(url_for("facturas"))
+                return redirect(url_for("gastos"))
             return redirect(url_for("dashboard"))
         flash("PIN incorrecto.", "danger")
     return render_template("login.html", usuarios=usuarios)
@@ -172,6 +172,7 @@ def dashboard():
 # ─── Facturas ─────────────────────────────────────────────────────────────────
 @app.route("/facturas")
 @login_required
+@solo_socios
 def facturas():
     tienda = request.args.get("tienda", "")
     estado = request.args.get("estado", "")
@@ -185,8 +186,7 @@ def facturas():
 
 @app.route("/facturas/nueva", methods=["POST"])
 @login_required
-@solo_socios
-def factura_nueva():
+@solo_sociosdef factura_nueva():
     total_iva = float(request.form.get("total_iva", 0) or 0)
     iva_pct   = float(get_config("IVA_PCT", "21")) / 100
     base      = round(total_iva / (1 + iva_pct), 2)

@@ -49,8 +49,10 @@
         <li class="nav-item"><a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}"
             href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Inicio</a></li>
         {% endif %}
+        {% if session.get('user_rol') in ('admin','socio') %}
         <li class="nav-item"><a class="nav-link {% if 'factura' in (request.endpoint or '') %}active{% endif %}"
             href="{{ url_for('facturas') }}"><i class="bi bi-file-earmark-text"></i> Facturas</a></li>
+        {% endif %}
         <li class="nav-item"><a class="nav-link {% if 'gasto' in (request.endpoint or '') %}active{% endif %}"
             href="{{ url_for('gastos') }}"><i class="bi bi-wallet2"></i> Gastos</a></li>
         {% if session.get('user_rol') in ('admin','socio') %}
