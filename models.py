@@ -31,7 +31,7 @@ class Factura(db.Model):
     total_iva   = db.Column(db.Float, default=0.0)   # importe que paga JYSK (IVA incluido)
     base        = db.Column(db.Float, default=0.0)   # total_iva / 1.21
     iva         = db.Column(db.Float, default=0.0)   # total_iva - base
-    concepto    = db.Column(db.String(300), default="Servicios de reposición, merchandising y mantenimiento")
+    concepto    = db.Column(db.String(300), default="Transporte y montaje de muebles")
     estado      = db.Column(db.String(20), default="pendiente")  # pendiente / enviada / cobrada
     fecha_envio = db.Column(db.Date, nullable=True)   # cuando se envió a JYSK
     user_id     = db.Column(db.Integer, db.ForeignKey("usuarios.id"))

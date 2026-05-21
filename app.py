@@ -194,7 +194,7 @@ def factura_nueva():
         total_iva= total_iva,
         base     = base,
         iva      = iva,
-        concepto = request.form.get("concepto", "Servicios de reposición, merchandising y mantenimiento"),
+        concepto = request.form.get("concepto", "Transporte y montaje de muebles"),
         estado   = "pendiente",
         user_id  = session["user_id"],
     )
