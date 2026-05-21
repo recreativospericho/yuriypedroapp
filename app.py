@@ -61,7 +61,7 @@ def solo_socios(f):
     def decorated(*args, **kwargs):
         if session.get("user_rol") not in ("admin", "socio"):
             flash("Acceso restringido a socios.", "warning")
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("facturas"))
         return f(*args, **kwargs)
     return decorated
 
@@ -114,6 +114,9 @@ def login():
             session["user_nombre"]= u.nombre
             session["user_rol"]  = u.rol
             session["user_ini"]  = u.iniciales
+            # Empleado va directo a facturas
+            if u.rol == "empleado":
+                return redirect(url_for("facturas"))
             return redirect(url_for("dashboard"))
         flash("PIN incorrecto.", "danger")
     return render_template("login.html", usuarios=usuarios)
@@ -128,6 +131,7 @@ def logout():
 # ─── Dashboard ────────────────────────────────────────────────────────────────
 @app.route("/dashboard")
 @login_required
+@solo_socios
 def dashboard():
     hoy    = date.today()
     mes    = hoy.month
@@ -303,6 +307,7 @@ def gasto_eliminar(gid):
 # ─── Km / Vehículo ────────────────────────────────────────────────────────────
 @app.route("/km")
 @login_required
+@solo_socios
 def km():
     lista = KmViaje.query.order_by(KmViaje.fecha.desc()).limit(50).all()
     total_km = sum(k.km_total for k in KmViaje.query.all())
@@ -341,6 +346,7 @@ def km_eliminar(kid):
 # ─── Agenda / Partes ──────────────────────────────────────────────────────────
 @app.route("/agenda")
 @login_required
+@solo_socios
 def agenda():
     hoy    = date.today()
     lunes  = hoy - timedelta(days=hoy.weekday())

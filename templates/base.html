@@ -45,17 +45,19 @@
             data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
     <div class="collapse navbar-collapse" id="nav">
       <ul class="navbar-nav me-auto">
+        {% if session.get('user_rol') in ('admin','socio') %}
         <li class="nav-item"><a class="nav-link {% if request.endpoint=='dashboard' %}active{% endif %}"
             href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Inicio</a></li>
+        {% endif %}
         <li class="nav-item"><a class="nav-link {% if 'factura' in (request.endpoint or '') %}active{% endif %}"
             href="{{ url_for('facturas') }}"><i class="bi bi-file-earmark-text"></i> Facturas</a></li>
         <li class="nav-item"><a class="nav-link {% if 'gasto' in (request.endpoint or '') %}active{% endif %}"
             href="{{ url_for('gastos') }}"><i class="bi bi-wallet2"></i> Gastos</a></li>
+        {% if session.get('user_rol') in ('admin','socio') %}
         <li class="nav-item"><a class="nav-link {% if request.endpoint=='km' %}active{% endif %}"
             href="{{ url_for('km') }}"><i class="bi bi-truck"></i> Km</a></li>
         <li class="nav-item"><a class="nav-link {% if request.endpoint=='agenda' %}active{% endif %}"
             href="{{ url_for('agenda') }}"><i class="bi bi-calendar3"></i> Agenda</a></li>
-        {% if session.get('user_rol') in ('admin','socio') %}
         <li class="nav-item"><a class="nav-link {% if request.endpoint=='ajustes' %}active{% endif %}"
             href="{{ url_for('ajustes') }}"><i class="bi bi-gear"></i> Ajustes</a></li>
         {% endif %}
