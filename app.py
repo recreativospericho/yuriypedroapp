@@ -61,7 +61,7 @@ def solo_socios(f):
     def decorated(*args, **kwargs):
         if session.get("user_rol") not in ("admin", "socio"):
             flash("Acceso restringido a socios.", "warning")
-            return redirect(url_for("facturas"))
+            return redirect(url_for("gastos"))
         return f(*args, **kwargs)
     return decorated
 
